@@ -116,14 +116,46 @@ const $btnClear = document.getElementById('btn-clear');
 const $successModal = document.getElementById('success-modal');
 const $btnPlayAgain = document.getElementById('btn-play-again');
 const $generatingOverlay = document.getElementById('generating-overlay');
+let $mobileInput = null;
 
 /* ============================================================
    INITIALIZATION
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  setupMobileInput();
   generateNewPuzzle();
   bindEvents();
 });
+
+function setupMobileInput() {
+  $mobileInput = document.createElement('input');
+  $mobileInput.type = 'text';
+  $mobileInput.className = 'mobile-input-helper';
+  $mobileInput.style.position = 'absolute';
+  $mobileInput.style.opacity = '0';
+  $mobileInput.style.pointerEvents = 'none';
+  $mobileInput.style.left = '-9999px';
+  $mobileInput.setAttribute('autocapitalize', 'characters');
+  $mobileInput.setAttribute('autocomplete', 'off');
+  $mobileInput.setAttribute('autocorrect', 'off');
+  $mobileInput.setAttribute('spellcheck', 'false');
+  document.body.appendChild($mobileInput);
+
+  $mobileInput.addEventListener('input', (e) => {
+    if (!activeCell || puzzleSolved) return;
+    const val = $mobileInput.value;
+    $mobileInput.value = ' '; // reset with a space to allow backspace detection
+    
+    if (val.length > 1) {
+      const char = val.charAt(val.length - 1);
+      if (/^[a-zA-Z]$/.test(char)) {
+        handleLetterInput(char);
+      }
+    } else if (val.length === 0) {
+      handleBackspace();
+    }
+  });
+}
 
 function bindEvents() {
   $btnNew.addEventListener('click', generateNewPuzzle);
@@ -274,6 +306,12 @@ function handleCellClick(row, col) {
 
   activeCell = { row, col };
   highlightActiveCells();
+  
+  // Bring up software keyboard on mobile
+  if ($mobileInput) {
+    $mobileInput.value = ' '; // Ensure it starts with space so backspace can be caught
+    $mobileInput.focus({ preventScroll: true });
+  }
 }
 
 function handleKeydown(e) {
@@ -295,42 +333,52 @@ function handleKeydown(e) {
 
   if (e.key === 'Backspace' || e.key === 'Delete') {
     e.preventDefault();
-    if (userGrid[row][col] !== '') {
-      userGrid[row][col] = '';
-      updateCellDisplay(row, col);
-    } else {
-      // Move backward
-      const dr = activeDirection === 'down' ? -1 : 0;
-      const dc = activeDirection === 'across' ? -1 : 0;
-      const nr = row + dr, nc = col + dc;
-      if (nr >= 0 && nr < puzzleData.rows && nc >= 0 && nc < puzzleData.cols && puzzleData.grid[nr][nc] !== null) {
-        userGrid[nr][nc] = '';
-        activeCell = { row: nr, col: nc };
-        updateCellDisplay(nr, nc);
-        highlightActiveCells();
-      }
-    }
-    updateStats();
+    handleBackspace();
     return;
   }
 
   if (/^[a-zA-Z]$/.test(e.key)) {
     e.preventDefault();
-    userGrid[row][col] = e.key.toUpperCase();
-    updateCellDisplay(row, col);
+    handleLetterInput(e.key);
+  }
+}
 
-    // Advance to next cell
-    const dr = activeDirection === 'down' ? 1 : 0;
-    const dc = activeDirection === 'across' ? 1 : 0;
+function handleBackspace() {
+  const { row, col } = activeCell;
+  if (userGrid[row][col] !== '') {
+    userGrid[row][col] = '';
+    updateCellDisplay(row, col);
+  } else {
+    // Move backward
+    const dr = activeDirection === 'down' ? -1 : 0;
+    const dc = activeDirection === 'across' ? -1 : 0;
     const nr = row + dr, nc = col + dc;
-    if (nr < puzzleData.rows && nc < puzzleData.cols && puzzleData.grid[nr][nc] !== null) {
+    if (nr >= 0 && nr < puzzleData.rows && nc >= 0 && nc < puzzleData.cols && puzzleData.grid[nr][nc] !== null) {
+      userGrid[nr][nc] = '';
       activeCell = { row: nr, col: nc };
+      updateCellDisplay(nr, nc);
       highlightActiveCells();
     }
-
-    updateStats();
-    checkAutoSolve();
   }
+  updateStats();
+}
+
+function handleLetterInput(char) {
+  const { row, col } = activeCell;
+  userGrid[row][col] = char.toUpperCase();
+  updateCellDisplay(row, col);
+
+  // Advance to next cell
+  const dr = activeDirection === 'down' ? 1 : 0;
+  const dc = activeDirection === 'across' ? 1 : 0;
+  const nr = row + dr, nc = col + dc;
+  if (nr < puzzleData.rows && nc < puzzleData.cols && puzzleData.grid[nr][nc] !== null) {
+    activeCell = { row: nr, col: nc };
+    highlightActiveCells();
+  }
+
+  updateStats();
+  checkAutoSolve();
 }
 
 function moveActive(dr, dc) {
