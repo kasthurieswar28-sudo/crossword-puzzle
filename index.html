@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Interactive crossword puzzle generator using backtracking algorithm. Solve beautifully generated crossword puzzles in your browser." />
+  <title>ClueCraft — AI-Powered Puzzle Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Background effects -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- Header -->
+  <header id="app-header">
+    <div class="header-content">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 32 32" width="32" height="32">
+          <rect x="2" y="2" width="12" height="12" rx="2" fill="var(--accent)" opacity="0.9"/>
+          <rect x="18" y="2" width="12" height="12" rx="2" fill="var(--accent)" opacity="0.5"/>
+          <rect x="2" y="18" width="12" height="12" rx="2" fill="var(--accent)" opacity="0.5"/>
+          <rect x="18" y="18" width="12" height="12" rx="2" fill="var(--accent)" opacity="0.3"/>
+          <text x="5" y="12" font-size="10" font-weight="800" fill="var(--bg-primary)" font-family="Inter">C</text>
+          <text x="21" y="12" font-size="10" font-weight="800" fill="white" font-family="Inter">C</text>
+        </svg>
+        <span class="logo-text">Clue<span class="logo-accent">Craft</span></span>
+      </div>
+      <div class="header-stats">
+        <div class="stat" id="stat-words">
+          <span class="stat-label">Words</span>
+          <span class="stat-value" id="words-placed">0</span>
+        </div>
+        <div class="stat" id="stat-progress">
+          <span class="stat-label">Progress</span>
+          <span class="stat-value" id="progress-pct">0%</span>
+        </div>
+        <div class="stat" id="stat-timer">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="timer-display">0:00</span>
+        </div>
+      </div>
+      <button id="btn-new-puzzle" class="btn btn-primary" title="Generate a new puzzle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+        New Puzzle
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main id="app-main">
+    <!-- Puzzle Area -->
+    <section id="puzzle-section">
+      <div id="puzzle-container">
+        <div id="grid-wrapper">
+          <div id="crossword-grid"></div>
+        </div>
+      </div>
+      <div id="puzzle-controls">
+        <button id="btn-check" class="btn btn-secondary" title="Check answers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
+          Check
+        </button>
+        <button id="btn-reveal" class="btn btn-secondary" title="Reveal all answers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M20.188 10.934c.388.472.582.707.582 1.066s-.194.594-.582 1.066C18.768 14.79 15.636 18 12 18c-3.636 0-6.768-3.21-8.188-4.934C3.424 12.594 3.23 12.36 3.23 12s.194-.594.582-1.066C5.232 9.21 8.364 6 12 6c3.636 0 6.768 3.21 8.188 4.934z"/></svg>
+          Reveal
+        </button>
+        <button id="btn-clear" class="btn btn-ghost" title="Clear all answers">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          Clear
+        </button>
+      </div>
+    </section>
+
+    <!-- Clues Panel -->
+    <aside id="clues-panel">
+      <div class="clues-section" id="across-section">
+        <h2 class="clues-heading">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          Across
+        </h2>
+        <ul id="across-clues" class="clues-list"></ul>
+      </div>
+      <div class="clues-section" id="down-section">
+        <h2 class="clues-heading">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>
+          Down
+        </h2>
+        <ul id="down-clues" class="clues-list"></ul>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Success Modal -->
+  <div id="success-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-confetti"></div>
+      <div class="modal-icon">🎉</div>
+      <h2 class="modal-title">Puzzle Completed!</h2>
+      <p class="modal-subtitle" id="modal-time">Solved in 0:00</p>
+      <div class="modal-stats">
+        <div class="modal-stat">
+          <span class="modal-stat-value" id="modal-words">0</span>
+          <span class="modal-stat-label">Words</span>
+        </div>
+        <div class="modal-stat">
+          <span class="modal-stat-value" id="modal-cells">0</span>
+          <span class="modal-stat-label">Letters</span>
+        </div>
+      </div>
+      <button id="btn-play-again" class="btn btn-primary btn-lg">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Generating overlay -->
+  <div id="generating-overlay" class="modal-overlay hidden">
+    <div class="generating-card">
+      <div class="spinner"></div>
+      <p class="generating-text">Generating puzzle...</p>
+      <p class="generating-sub">Using backtracking algorithm</p>
+    </div>
+  </div>
+
+  <script src="crossword-engine.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
